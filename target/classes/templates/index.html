@@ -18,6 +18,9 @@ Name:
                     	th:errorclass="error" th:errors="*{name}">
                     	Check Name</p>
 <br>
+<p th:if="${#fields.hasErrors('global')}" 
+                    	class="error" th:each="err : ${#fields.errors('global')}" th:text="${err}">
+                    	</p>
 <br>
 Sectors: 
 

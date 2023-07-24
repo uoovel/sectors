@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -301,6 +302,12 @@ public class FrontPageController {
 			@Valid @ModelAttribute("frontDto") FrontDto frontDto,			
 			BindingResult result,
 			Model model) {
+		
+		SectorType[] sectorTypes = frontDto.getSectors();
+        if(sectorTypes.length < 1) {			
+			ObjectError errorSector = new ObjectError("globalError", "{Check selection}");
+			result.addError(errorSector);
+		}
 		if(result.hasErrors()) {
 			System.out.println("FrontPageController150:");
 		}
@@ -308,7 +315,9 @@ public class FrontPageController {
 		//Person person = frontDto.getPerson();
 	    String personName = frontDto.getName();
 		System.out.println("FrontPageController200:" + result.toString());
-		SectorType[] sectorTypes = frontDto.getSectors();
+		
+		
+		
 		Boolean fillOK = false;
 		
 		if(personName.length() > 0 && sectorTypes.length > 0 && !result.hasErrors()) {
