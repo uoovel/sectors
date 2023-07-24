@@ -25,6 +25,10 @@ public class SectorType {
 	@JoinColumn(name = "parent_id")
 	private SectorType parent;
 	
+	@ManyToOne
+	@JoinColumn(name = "child_id")
+	private SectorType child;
+	
 	public SectorType() {
 		
 	}
@@ -53,6 +57,14 @@ public class SectorType {
 	}
 	public void setParent(SectorType parent) {
 		this.parent = parent;
+	}
+
+	public SectorType getChild() {
+		return child;
+	}
+
+	public void setChild(SectorType child) {
+		this.child = child;
 	}
 	
 	

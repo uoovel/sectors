@@ -13,7 +13,10 @@
 Name: 
 <form action="#" th:action="@{/save}" th:object="${frontDto}" method="post">
 
-<input type="text" th:field="*{person.name}">
+<input type="text" th:field="*{name}">
+<p th:if="${#fields.hasErrors('name')}" 
+                    	th:errorclass="error" th:errors="*{name}">
+                    	Check Name</p>
 <br>
 <br>
 Sectors: 
@@ -21,7 +24,7 @@ Sectors:
 <select th:field="*{sectors}" id="sectors" name="sectors" multiple>
     <option value="0" th:disabled="disabled">--please select--</option>
     
-	<th:block th:each="sectorType: ${sectorTypeList}">
+	<th:block th:each="sectorType: ${corrSectorTypeList}">
 	
     <option th:utext="${sectorType.typeName}" th:value="${sectorType.id}" />
     
