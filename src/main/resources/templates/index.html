@@ -2,25 +2,29 @@
 <!-- https://stackoverflow.com/questions/33136866/display-a-string-that-contains-html-in-thymeleaf-template -->
 <!-- https://www.baeldung.com/thymeleaf-select-option -->
 <!-- https://stackoverflow.com/questions/35655009/thymeleaf-doesnt-select-disabled-option -->
+<!-- https://www.baeldung.com/spring-thymeleaf-error-messages -->
 <!-- saved from url=(0094)file:///C:/Users/oliver.stimmer/AppData/Roaming/Skype/My%20Skype%20Received%20Files/index.html -->
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
     xmlns:th="http://www.thymeleaf.org">
 <head>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"></head><body>Please enter your name and pick the Sectors you are currently involved in.
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<link th:href="@{/styles/cssandjs/main.css}" rel="stylesheet" />
+</head><body>Please enter your name and pick the Sectors you are currently involved in.
 <br>
 <br>
 Name: 
 <form action="#" th:action="@{/save}" th:object="${frontDto}" method="post">
+<input type="hidden" th:field="*{personId}" name="personId">
+<input type="hidden" th:field="*{personInSectorId}" name="personInSectorId">
 
 <input type="text" th:field="*{name}">
 <p th:if="${#fields.hasErrors('name')}" 
                     	th:errorclass="error" th:errors="*{name}">
                     	Check Name</p>
 <br>
-<p th:if="${#fields.hasErrors('global')}" 
-                    	class="error" th:each="err : ${#fields.errors('global')}" th:text="${err}">
-                    	</p>
+
 <br>
 Sectors: 
 
@@ -35,12 +39,45 @@ Sectors:
 </select>
 
 <br>
+<p th:if="${#fields.hasErrors('global')}" 
+                    	class="error" th:each="err : ${#fields.errors('global')}" th:text="${err}">
+                    	</p>
 <br>
-<input type="checkbox"> Agree to terms
+<input type="checkbox" th:field="*{agreeTerms}"> Agree to terms
 
 <br>
+
 <br>
-<input type="submit" value="Save">
+<span th:if="${finalConfirmButton != 1}">
+<input type="submit" name="action" value="Save">
+</span>
+
+
+<span th:if="${finalConfirmButton == 1}">
+
+<input type="submit" name="action" value="Edit">
+<br>
+<br>
+
+<table class="finalConfirm">
+<tr>
+<th>Final Confirmation</th>
+<tr/>
+<tr>
+<td>
+<b>Name:</b>
+<p th:text="*{name}"></p>
+<b>Sectors:</b>
+<th:block th:each="sector: *{sectors}">
+	<p th:utext="${sector.typeName}"></p>
+</th:block>
+<input type="submit" name="action" value="Confirm">
+</td>
+</tr>
+</table>
+
+</span>
+
 </form>
 
 </body></html>

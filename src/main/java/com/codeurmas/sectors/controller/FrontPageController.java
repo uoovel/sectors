@@ -14,6 +14,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.codeurmas.sectors.model.Person;
 import com.codeurmas.sectors.model.SectorType;
@@ -62,7 +63,7 @@ public class FrontPageController {
 	    
 		List<SectorType> corrSectorTypeList = new ArrayList<>();
 		corrSectorTypeList = giveFinalSectorList();
-		frontDto.corrSectorTypeList = corrSectorTypeList;
+		//frontDto.corrSectorTypeList = corrSectorTypeList;
 		model.addAttribute("frontDto", frontDto);
 		model.addAttribute("corrSectorTypeList", corrSectorTypeList);
 		return "index.html";
@@ -301,13 +302,19 @@ public class FrontPageController {
 	public String save(
 			@Valid @ModelAttribute("frontDto") FrontDto frontDto,			
 			BindingResult result,
-			Model model) {
+			Model model,
+			@RequestParam(value="action", required=true) String action) {
 		
 		SectorType[] sectorTypes = frontDto.getSectors();
         if(sectorTypes.length < 1) {			
 			ObjectError errorSector = new ObjectError("globalError", "{Check selection}");
 			result.addError(errorSector);
 		}
+        if(!frontDto.isAgreeTerms()) {			
+  			ObjectError errorTerms = new ObjectError("globalError", "{Check 'Agree to terms'}");
+  			result.addError(errorTerms);
+  		}
+        System.out.println("FrontPageController100: " + frontDto.isAgreeTerms());
 		if(result.hasErrors()) {
 			System.out.println("FrontPageController150:");
 		}
@@ -332,17 +339,70 @@ public class FrontPageController {
 			model.addAttribute("corrSectorTypeList", giveFinalSectorList());
 			return "index.html";
 		}		
-		Person person = new Person();
+		Person person = new Person();		
 		person.setName(personName);
-		Person personSaved = personService.save(person);
-		
-		PersonInSector personInSector = new PersonInSector();		
-		for(int i = 0; i < sectorTypes.length; i++) {
-			personInSector.setPerson(personSaved);
-			personInSector.setSectorType(sectorTypes[i]);
-			PersonInSector personInSectorSaved = personInSectorService.save(personInSector);
-			System.out.println("FrontPageController400: " + personInSectorSaved.getId());
+		Person personSaved = new Person();
+		Person personEdited = new Person();
+		if(action.matches("Save")) {
+			personSaved = personService.save(person);
 		}
+		if(action.matches("Edit")) {
+			Long personId = frontDto.getPersonId();
+			person.setId(personId);
+			System.out.println("FrontPageController330: " + person);
+			personEdited = personService.edit(person);
+			//Clear previously selected sections
+			personInSectorService.deleteByPerson(person);//järg		
+		}
+		
+				
+		for(int i = 0; i < sectorTypes.length; i++) {
+			PersonInSector personInSector = new PersonInSector();
+			personInSector.setSectorType(sectorTypes[i]);
+			personInSector.setAgreeTerms(true);
+			Long personId = null;
+			Long personInSectorId = null;
+			System.out.println("FrontPageController350: " + action);//järg
+			if(action.matches("Save")) {
+				
+				//personSaved = personService.save(person);
+				personInSector.setPerson(personSaved);
+				System.out.println("FrontPageController370: " + personInSector);//järg
+				PersonInSector personInSectorSaved = personInSectorService.save(personInSector);
+				personId = personSaved.getId();
+				personInSectorId = personInSectorSaved.getId();
+				
+				System.out.println("FrontPageController400: " + personInSectorId);
+			}
+			if(action.matches("Edit")) {
+				
+				System.out.println("FrontPageController500: " + personEdited);
+				personInSector.setPerson(personEdited);
+				
+				
+				PersonInSector personInSectorEdited = personInSectorService.edit(personInSector);
+				personId = personEdited.getId();
+				personInSectorId = personInSectorEdited.getId();
+				System.out.println("FrontPageController600: " + personInSectorEdited);
+			}
+			//model.addAttribute("personId", personId);
+			//model.addAttribute("personInSectorId", personInSectorId);
+			frontDto.setPersonId(personId);
+			frontDto.setPersonInSectorId(personInSectorId);
+			
+			int finalConfirmButton = 1;
+			model.addAttribute("finalConfirmButton", finalConfirmButton);
+			System.out.println("FrontPageController700: " + sectorTypes.length);
+			if(i == sectorTypes.length - 1) {
+				if (action.matches("Save") || action.matches("Edit")) {
+					model.addAttribute("corrSectorTypeList", giveFinalSectorList());
+					return "index.html";
+				}
+			}
+			
+			
+		}
+		
 		
 		
 		

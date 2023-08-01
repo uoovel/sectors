@@ -7,4 +7,6 @@ import com.codeurmas.sectors.model.PersonInSector;
 
 public interface PersonInSectorRepository extends JpaRepository<PersonInSector, Long> {
 
+	void deleteByPerson(Person person);
+
 }

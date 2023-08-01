@@ -1,5 +1,6 @@
 package com.codeurmas.sectors.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -22,7 +23,19 @@ public class PersonInSector {
 	@JoinColumn(name = "sectortype_id")
 	private SectorType sectorType;
 	
+	@Column
+	private boolean agreeTerms;
 	
+	public boolean isAgreeTerms() {
+		return agreeTerms;
+	}
+
+
+	public void setAgreeTerms(boolean agreeTerms) {
+		this.agreeTerms = agreeTerms;
+	}
+
+
 	public PersonInSector() {
 		
 	}
@@ -55,6 +68,13 @@ public class PersonInSector {
 
 	public void setSectorType(SectorType sectorType) {
 		this.sectorType = sectorType;
+	}
+
+
+	@Override
+	public String toString() {
+		return "PersonInSector [id=" + id + ", person=" + person + ", sectorType=" + sectorType + ", agreeTerms="
+				+ agreeTerms + "]";
 	}
 	
 	

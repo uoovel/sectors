@@ -1,0 +1,10 @@
+body {
+	background-color: lightblue;
+}
+.error{
+	color: red;
+}
+.finalConfirm{
+	border: 1px;
+    background-color: white;
+}

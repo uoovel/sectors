@@ -66,6 +66,13 @@ public class SectorType {
 	public void setChild(SectorType child) {
 		this.child = child;
 	}
+
+	@Override
+	public String toString() {
+		return "SectorType [Id=" + Id + ", typeName=" + typeName + ", granny=" + granny + ", parent=" + parent
+				+ ", child=" + child + "]";
+	}
+	
 	
 	
 

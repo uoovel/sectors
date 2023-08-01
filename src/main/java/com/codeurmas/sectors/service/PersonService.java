@@ -20,4 +20,9 @@ public class PersonService {
 		
 	}
 
+	public Person edit(Person person) {
+		// TODO Auto-generated method stub
+		return repo.save(person);
+	}
+
 }
