@@ -1,5 +1,7 @@
 package com.codeurmas.sectors.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +23,11 @@ public class SectorTypeService {
 		
 	}
 
-	public List findAll() {
-		
+	public List findAll() {		
 		return repo.findAll();
 	}
+	
+	
+	
 
 }

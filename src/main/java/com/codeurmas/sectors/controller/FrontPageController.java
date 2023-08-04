@@ -37,38 +37,180 @@ public class FrontPageController {
 
 	@RequestMapping("/")
 	public String frontPage(Model model) {
-		System.out.println("FrontPageController10:");
-		List<SectorType> sectorTypeList = new ArrayList<>();
-		System.out.println("FrontPageController20:");
+		
+		List<SectorType> sectorTypeList = new ArrayList<>();		
 		sectorTypeList = sectorTypeService.findAll();
-		System.out.println("FrontPageController30:");
-		if (sectorTypeList.size() < 1) { //db create
-			System.out.println("FrontPageController40:");
+		
+		if (sectorTypeList.size() < 1) { //db create			
 			//create DB
 			createDB();
+		}
+		
+		FrontDto frontDto = new FrontDto();
+		//List<SectorType> sectorTypeList = new ArrayList<>();
+		//sectorTypeList = sectorTypeService.findAll();
+		
+		List<SectorType> corrSectorTypeList = new ArrayList<>();
+		//
+		corrSectorTypeList = giveFinalSectorList();
+		model.addAttribute("frontDto", frontDto);
+		model.addAttribute("corrSectorTypeList", corrSectorTypeList);
+		return "index.html";
+	}
+
+	@RequestMapping(value = "/save", method = RequestMethod.POST)
+	public String save(
+			@Valid @ModelAttribute("frontDto") FrontDto frontDto,			
+			BindingResult result,
+			Model model,
+			@RequestParam(value="action", required=true) String action) {
+		
+		SectorType[] sectorTypes = frontDto.getSectors();
+        if(sectorTypes.length < 1) {			
+			ObjectError errorSector = new ObjectError("globalError", "{Check selection}");
+			result.addError(errorSector);
+		}
+        if(!frontDto.isAgreeTerms()) {			
+  			ObjectError errorTerms = new ObjectError("globalError", "{Check 'Agree to terms'}");
+  			result.addError(errorTerms);
+  		}
+        
+		if(result.hasErrors()) {
+			System.out.println("FrontPageController150:");
+		}
+		
+		//List<SectorType> corrSectorTypeList = giveFinalSectorList();
+		String personName = frontDto.getName();		
+		Boolean fillOK = false;		
+		if(personName.length() > 0 && sectorTypes.length > 0 && !result.hasErrors()) {
+			fillOK = true;
+		}
+		if(fillOK == false) {
 			
+			model.addAttribute("corrSectorTypeList", giveFinalSectorList());
+			return "index.html";
+		}
+		
+		
+		//confirm session
+        //SectorType[] sectorTypes = frontDto.getSectors();		
+		Person person = new Person();		
+		person.setName(frontDto.getName());
+		Person personSaved = new Person();
+		Person personEdited = new Person();
+		if(action.matches("Save")) {
+			personSaved = personService.save(person);
+		}
+		if(action.matches("Edit")) {
+			Long personId = frontDto.getPersonId();
+			person.setId(personId);
+			personEdited = personService.save(person);
+			//Clear previously selected sections
+			personInSectorService.deleteByPerson(person);
+		}
+		for(int i = 0; i < sectorTypes.length; i++) {
+			PersonInSector personInSector = new PersonInSector();
+			personInSector.setSectorType(sectorTypes[i]);
+			personInSector.setAgreeTerms(true);
+			Long personId = null;
+			Long personInSectorId = null;
+			if(action.matches("Save")) {
+				
+				personInSector.setPerson(personSaved);
+				System.out.println("PersonInSector100: " + personInSector);
+				PersonInSector personInSectorSaved = personInSectorService.save(personInSector);
+				personId = personSaved.getId();
+				personInSectorId = personInSectorSaved.getId();
+				
+			}
+			if(action.matches("Edit")) {
+				personInSector.setPerson(personEdited);
+				PersonInSector personInSectorEdited = personInSectorService.edit(personInSector);
+				personId = personEdited.getId();
+				personInSectorId = personInSectorEdited.getId();
+			}
 			
+			frontDto.setPersonId(personId);
+			frontDto.setPersonInSectorId(personInSectorId);
+			
+			//frontDto = personInSectorService.confirmSession(frontDto, corrSectorTypeList, action);
+			
+			int finalConfirmButton = 1;
+			model.addAttribute("finalConfirmButton", finalConfirmButton);
+			if(i == sectorTypes.length - 1) {
+				if (action.matches("Save") || action.matches("Edit")) {
+					
+					model.addAttribute("corrSectorTypeList", giveFinalSectorList());
+					return "index.html";
+				}
+			}
 		}
 		
 		
 		
 		
-		//db create	
 		
-		System.out.println("FrontPageController100:");
-		//Person person = new Person();
-		//model.addAttribute("person", person);
-		FrontDto frontDto = new FrontDto();
-				
-	    
-		List<SectorType> corrSectorTypeList = new ArrayList<>();
-		corrSectorTypeList = giveFinalSectorList();
-		//frontDto.corrSectorTypeList = corrSectorTypeList;
-		model.addAttribute("frontDto", frontDto);
-		model.addAttribute("corrSectorTypeList", corrSectorTypeList);
-		return "index.html";
+		
+		return "redirect:/";
 	}
 	
+	private List<SectorType> giveFinalSectorList() {
+		//give final sector list
+		List<SectorType> sectorTypeList = new ArrayList<>();
+		sectorTypeList = sectorTypeService.findAll();
+		List<SectorType> corrSectorTypeList = new ArrayList<>();
+				
+		
+		for (SectorType type :  sectorTypeList) {
+			SectorType typeCorr = new SectorType();
+			Long idGranny = null;
+			try {
+				idGranny = type.getGranny().getId();
+				if(idGranny > 0) {
+					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;";
+					typeCorr.setTypeName("<a>" + fnameAdding + type.getTypeName() + "</a>");
+					typeCorr.setGranny(type.getGranny());				}				
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			Long idParent = null;
+			try {
+				idParent = type.getParent().getId();
+				if(idParent > 0) {
+					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;";
+					typeCorr.setTypeName("<a>" + fnameAdding + fnameAdding + type.getTypeName() + "</a>");					
+					typeCorr.setParent(type.getParent());
+				}				
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			Long idChild = null;
+			try {
+				idChild = type.getChild().getId();
+				if(idChild > 0) {
+					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;"; //järg
+					typeCorr.setTypeName("<a>" + fnameAdding + fnameAdding + fnameAdding + type.getTypeName() + "</a>");					
+					typeCorr.setChild(type.getChild());
+				}				
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			if(idGranny == null && idParent == null && idChild == null) {
+				String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;";
+				typeCorr.setTypeName("<a>" + type.getTypeName() + "</a>");					
+			}
+			typeCorr.setId(type.getId());
+			corrSectorTypeList.add(typeCorr);			
+		}
+		//give final sector list
+		return corrSectorTypeList;
+	}
 	private void createDB() {
 		List<String> typeNameList = Arrays.asList("Manufacturing", "Other", "Service");
 		for (String typeName : typeNameList) {
@@ -191,7 +333,6 @@ public class FrontPageController {
 				    "Road",
 				    "Water");
 			    }
-			    //System.out.println("createDB100: " + sectorName);
 			    
 			    try {
 					for (String subSectorName:subSectorList) {
@@ -233,180 +374,12 @@ public class FrontPageController {
 						} catch (Exception e) {
 							
 						}
-					
-					
 					}//for subsector
 				} catch (Exception e) {
 					
 				}
-			    
-				    
-			   
-			    
-			    
 		    }//for sector
 		}//for sectortype
-		
-	}
-
-	private List<SectorType> giveFinalSectorList() {
-		//give final sector list
-		List<SectorType> sectorTypeList = new ArrayList<>();
-		List<SectorType> corrSectorTypeList = new ArrayList<>();
-		sectorTypeList = sectorTypeService.findAll();		
-		
-		for (SectorType type :  sectorTypeList) {			
-			Long idGranny;
-			try {
-				idGranny = type.getGranny().getId();
-				if(idGranny > 0) {
-					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;"; //järg
-					type.setTypeName("<a>" + fnameAdding + type.getTypeName() + "</a>");					
-				}				
-				//System.out.println(type.getTypeName());
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-			}
-			Long idParent;
-			try {
-				idParent = type.getParent().getId();
-				if(idParent > 0) {
-					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;"; //järg
-					type.setTypeName("<a>" + fnameAdding + fnameAdding + type.getTypeName() + "</a>");					
-				}				
-				//System.out.println(type.getTypeName());
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-			}
-			Long idChild;
-			try {
-				idChild = type.getChild().getId();
-				if(idChild > 0) {
-					String fnameAdding = "&nbsp;&nbsp;&nbsp;&nbsp;"; //järg
-					type.setTypeName("<a>" + fnameAdding + fnameAdding + fnameAdding + type.getTypeName() + "</a>");					
-				}				
-				//System.out.println(type.getTypeName());
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				//e.printStackTrace();
-			}
-			corrSectorTypeList.add(type);			
-		}
-		//give final sector list
-		return corrSectorTypeList;
-	}
-
-	@RequestMapping(value = "/save", method = RequestMethod.POST)
-	public String save(
-			@Valid @ModelAttribute("frontDto") FrontDto frontDto,			
-			BindingResult result,
-			Model model,
-			@RequestParam(value="action", required=true) String action) {
-		
-		SectorType[] sectorTypes = frontDto.getSectors();
-        if(sectorTypes.length < 1) {			
-			ObjectError errorSector = new ObjectError("globalError", "{Check selection}");
-			result.addError(errorSector);
-		}
-        if(!frontDto.isAgreeTerms()) {			
-  			ObjectError errorTerms = new ObjectError("globalError", "{Check 'Agree to terms'}");
-  			result.addError(errorTerms);
-  		}
-        System.out.println("FrontPageController100: " + frontDto.isAgreeTerms());
-		if(result.hasErrors()) {
-			System.out.println("FrontPageController150:");
-		}
-		
-		//Person person = frontDto.getPerson();
-	    String personName = frontDto.getName();
-		System.out.println("FrontPageController200:" + result.toString());
-		
-		
-		
-		Boolean fillOK = false;
-		
-		if(personName.length() > 0 && sectorTypes.length > 0 && !result.hasErrors()) {
-			fillOK = true;
-		}
-		if(fillOK == false) {
-			System.out.println("FrontPageController300: Check fields!! ");
-			//List<SectorType> sectorTypeList = new ArrayList<>();
-			//sectorTypeList = sectorTypeService.findAll();
-			//model.addAttribute("frontDto", frontDto);
-	
-			model.addAttribute("corrSectorTypeList", giveFinalSectorList());
-			return "index.html";
-		}		
-		Person person = new Person();		
-		person.setName(personName);
-		Person personSaved = new Person();
-		Person personEdited = new Person();
-		if(action.matches("Save")) {
-			personSaved = personService.save(person);
-		}
-		if(action.matches("Edit")) {
-			Long personId = frontDto.getPersonId();
-			person.setId(personId);
-			System.out.println("FrontPageController330: " + person);
-			personEdited = personService.edit(person);
-			//Clear previously selected sections
-			personInSectorService.deleteByPerson(person);//järg		
-		}
-		
-				
-		for(int i = 0; i < sectorTypes.length; i++) {
-			PersonInSector personInSector = new PersonInSector();
-			personInSector.setSectorType(sectorTypes[i]);
-			personInSector.setAgreeTerms(true);
-			Long personId = null;
-			Long personInSectorId = null;
-			System.out.println("FrontPageController350: " + action);//järg
-			if(action.matches("Save")) {
-				
-				//personSaved = personService.save(person);
-				personInSector.setPerson(personSaved);
-				System.out.println("FrontPageController370: " + personInSector);//järg
-				PersonInSector personInSectorSaved = personInSectorService.save(personInSector);
-				personId = personSaved.getId();
-				personInSectorId = personInSectorSaved.getId();
-				
-				System.out.println("FrontPageController400: " + personInSectorId);
-			}
-			if(action.matches("Edit")) {
-				
-				System.out.println("FrontPageController500: " + personEdited);
-				personInSector.setPerson(personEdited);
-				
-				
-				PersonInSector personInSectorEdited = personInSectorService.edit(personInSector);
-				personId = personEdited.getId();
-				personInSectorId = personInSectorEdited.getId();
-				System.out.println("FrontPageController600: " + personInSectorEdited);
-			}
-			//model.addAttribute("personId", personId);
-			//model.addAttribute("personInSectorId", personInSectorId);
-			frontDto.setPersonId(personId);
-			frontDto.setPersonInSectorId(personInSectorId);
-			
-			int finalConfirmButton = 1;
-			model.addAttribute("finalConfirmButton", finalConfirmButton);
-			System.out.println("FrontPageController700: " + sectorTypes.length);
-			if(i == sectorTypes.length - 1) {
-				if (action.matches("Save") || action.matches("Edit")) {
-					model.addAttribute("corrSectorTypeList", giveFinalSectorList());
-					return "index.html";
-				}
-			}
-			
-			
-		}
-		
-		
-		
-		
-		return "redirect:/";
 		
 	}
 	
